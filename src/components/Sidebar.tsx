@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useMemo, useState, useMemo as useReactMemo } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Drawer } from "antd";
 import {
   FaHome,
   FaTools,
@@ -22,7 +23,6 @@ type Group = {
   href?: string;
 };
 
-// Map labels → icons (Font Awesome via react-icons)
 const ICONS = {
   home: FaHome,
   tools: FaTools,
@@ -107,160 +107,171 @@ const MENU: Group[] = [
 ];
 
 type Props = {
-  activePath?: string; // optional; still used to auto-expand groups on first render
-  open?: boolean; // mobile drawer
-  onClose?: () => void; // close mobile drawer
+  activePath?: string;
+  open?: boolean; // mobile drawer open
+  onClose?: () => void;
 };
 
-export default function Sidebar({
-  activePath = "/",
-  open = false,
-  onClose,
-}: Props) {
+export default function Sidebar({ activePath, open = false, onClose }: Props) {
+  const location = useLocation();
+  const currentPath = activePath ?? location.pathname;
+
   // expand groups by default if route matches
   const defaultOpen = useMemo(() => {
     const map = new Map<string, boolean>();
     MENU.forEach((g) => {
-      const isParent = g.href && g.href === activePath;
-      const hasActiveChild = g.items?.some((i) => i.href === activePath);
+      const isParent = g.href && g.href === currentPath;
+      const hasActiveChild = g.items?.some((i) => i.href === currentPath);
       map.set(g.label, Boolean(isParent || hasActiveChild));
     });
     return map;
-  }, [activePath]);
+  }, [currentPath]);
 
   const [expanded, setExpanded] = useState<Map<string, boolean>>(defaultOpen);
   const toggle = (label: string) =>
     setExpanded((prev) => new Map(prev).set(label, !prev.get(label)));
 
+  // The actual sidebar content (used for desktop and inside Drawer)
+  const Aside = (
+    <aside
+      className={[
+        "sidebar",
+        "w-72 shrink-0 h-screen bg-black text-white",
+        "overflow-y-auto flex flex-col shadow-2xl md:shadow-none",
+      ].join(" ")}
+    >
+      {/* Header with bg image + gradient */}
+      <div
+        className="relative h-40 p-6 flex items-end"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(17,17,17,0.4), rgba(0,0,0,0.9)), url(${sidebarBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="pt-12">
+          <div className="text-title">
+            SPEEDEX
+          </div>
+          <div className="text-title">
+            GROUP
+          </div>
+        </div>
+      </div>
+
+      {/* Menu (kept custom to preserve your exact look) */}
+      <nav className="px-4 pt-6 pb-6 space-y-2">
+        {MENU.map((group) => {
+          const GroupIcon = ICONS[group.icon];
+
+          // leaf (no children)
+          if (!group.items || group.items.length === 0) {
+            return (
+              <Link
+                key={group.label}
+                to={group.href ?? "#"}
+                onClick={onClose}
+                className={[
+                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors no-underline",
+                  currentPath === group.href
+                    ? "bg-primary/80 text-white"
+                    : "hover:bg-white/10 text-white/90 hover:text-white",
+                ].join(" ")}
+              >
+                <GroupIcon className="w-5 h-5 text-white/90" />
+                <span>{group.label}</span>
+              </Link>
+            );
+          }
+
+          // with children (collapsible)
+          const openGroup = expanded.get(group.label) ?? false;
+          const anyChildActive = group.items.some(
+            (i) => i.href === currentPath
+          );
+
+          return (
+            <div key={group.label}>
+              <button
+                type="button"
+                onClick={() => toggle(group.label)}
+                className={[
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg",
+                  "hover:bg-white/10 text-white/90",
+                  anyChildActive ? "bg-white/5" : "",
+                ].join(" ")}
+              >
+                <GroupIcon className="w-5 h-5 text-white/90" />
+                <span className="flex-1 text-left">
+                  {group.label}
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${openGroup ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {openGroup && (
+                <div className="mt-2 pl-2 space-y-2">
+                  {group.items.map((it) => {
+                    const ItIcon = it.icon ? ICONS[it.icon] : undefined;
+                    const active = currentPath === it.href;
+                    return (
+                      <Link
+                        key={it.label}
+                        to={it.href ?? "#"}
+                        onClick={onClose}
+                        className={[
+                          "flex items-center gap-3 px-4 py-2 rounded-2xl no-underline transition-colors",
+                          active
+                            ? "bg-primary text-white"
+                            : "hover:bg-white/10 text-white/90 hover:text-white",
+                        ].join(" ")}
+                      >
+                        {ItIcon ? (
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-white text-black">
+                            <ItIcon className="w-4 h-4" />
+                          </span>
+                        ) : (
+                          <span className="w-7" />
+                        )}
+                        <span>{it.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* Mobile backdrop (kept, but Drawer also dims the page) */}
       <div
         className={`fixed inset-0 bg-black/40 z-40 lg:hidden ${open ? "block" : "hidden"}`}
         onClick={onClose}
       />
 
-      <aside
-        className={[
-          "fixed lg:static top-0 left-0 z-50 lg:z-auto",
-          "w-72 shrink-0 h-screen",
-          "bg-black text-white",
-          "transition-transform duration-200",
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          "shadow-2xl md:shadow-none",
-          "overflow-y-auto flex flex-col",
-        ].join(" ")}
+      {/* Desktop static sidebar */}
+      <div className="hidden lg:block">{Aside}</div>
+
+      {/* Mobile Drawer using AntD (preserves your exact sidebar markup inside) */}
+      <Drawer
+        placement="left"
+        closable={false}
+        onClose={onClose}
+        open={open}
+        width={288}
+        className="lg:!hidden"
+        bodyStyle={{ padding: 0, background: "transparent" }}
+        styles={{ body: { padding: 0, background: "transparent" } }}
+        rootClassName="!bg-transparent"
       >
-        {/* Header with bg image + gradient + mobile close */}
-        <div
-          className="relative h-40 p-6 flex items-end"
-          style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(17,17,17,0.4), rgba(0,0,0,0.9)), url(${sidebarBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <button
-            onClick={onClose}
-            aria-label="Close menu"
-            className="lg:hidden absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-md bg-black/50 text-white"
-          >
-            ×
-          </button>
-
-          <div className="pt-12">
-            <div className="text-3xl font-heading leading-7 tracking-wide">
-              SPEEDEX
-            </div>
-            <div className="text-3xl font-heading leading-7 tracking-wide">
-              GROUP
-            </div>
-          </div>
-        </div>
-
-        {/* Menu (whole aside scrolls) */}
-        <nav className="px-4 pt-6 pb-6 space-y-2">
-          {MENU.map((group) => {
-            const GroupIcon = ICONS[group.icon];
-
-            // leaf (no children)
-            if (!group.items || group.items.length === 0) {
-              return (
-                <NavLink
-                  key={group.label}
-                  to={group.href ?? "#"}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    [
-                      "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                      "no-underline hover:no-underline",
-                      isActive
-                        ? "bg-primary/80 text-white hover:text-white"
-                        : "hover:bg-white/10 text-white/90 hover:text-white",
-                    ].join(" ")
-                  }
-                >
-                  <GroupIcon className="w-5 h-5 text-white/90" />
-                  <span className="text-[15px]">{group.label}</span>
-                </NavLink>
-              );
-            }
-
-            // with children (collapsible)
-            const openGroup = expanded.get(group.label) ?? false;
-            return (
-              <div key={group.label}>
-                <button
-                  type="button"
-                  onClick={() => toggle(group.label)}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-white/90"
-                >
-                  <GroupIcon className="w-5 h-5 text-white/90" />
-                  <span className="flex-1 text-[15px] text-left">
-                    {group.label}
-                  </span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${openGroup ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {openGroup && (
-                  <div className="mt-2 pl-2 space-y-2">
-                    {group.items.map((it) => {
-                      const ItIcon = it.icon ? ICONS[it.icon] : undefined;
-                      return (
-                        <NavLink
-                          key={it.label}
-                          to={it.href ?? "#"}
-                          onClick={onClose}
-                          className={({ isActive }) =>
-                            [
-                              "flex items-center gap-3 px-4 py-2 rounded-2xl",
-                              "no-underline hover:no-underline",
-                              isActive
-                                ? "bg-primary text-white hover:text-white"
-                                : "hover:bg-white/10 text-white/90 hover:text-white",
-                            ].join(" ")
-                          }
-                        >
-                          {ItIcon ? (
-                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-white text-black">
-                              <ItIcon className="w-4 h-4" />
-                            </span>
-                          ) : (
-                            <span className="w-7" />
-                          )}
-                          <span className="text-[15px]">{it.label}</span>
-                        </NavLink>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-      </aside>
+        {Aside}
+      </Drawer>
     </>
   );
 }

@@ -4,14 +4,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["DM Sans", "sans-serif"], // default body font
-        heading: ["Days One", "sans-serif"], // header font
+        sans: ["DM Sans", "sans-serif"],
+        heading: ["Days One", "sans-serif"],
       },
       colors: {
         primary: "#B3261E",
-        // 20% opacity of primary
         secondary: "rgb(179 38 30 / 0.20)",
-        // keep Tailwind’s gray/black; alias if you want:
         ink: "#111111",
       },
       maxWidth: {
@@ -23,16 +21,19 @@ export default {
         wide: "0.02em",
       },
       fontSize: {
-        xs: ["0.75rem", { lineHeight: "1rem" }], // 12px
-        sm: ["0.875rem", { lineHeight: "1.25rem" }], // 14px
-        base: ["1rem", { lineHeight: "1.5rem" }], // 16px
-        lg: ["1.125rem", { lineHeight: "1.75rem" }], // 18px
-        xl: ["1.25rem", { lineHeight: "1.75rem" }], // 20px
-        "2xl": ["1.5rem", { lineHeight: "2rem" }], // 24px
-        "3xl": ["1.875rem", { lineHeight: "2.25rem" }], // 30px
-        "4xl": ["2.25rem", { lineHeight: "2.5rem" }], // 36px
+        xs: ["0.75rem", { lineHeight: "1rem" }],
+        sm: ["0.875rem", { lineHeight: "1.25rem" }],
+        base: ["1rem", { lineHeight: "1.5rem" }],
+        lg: ["1.125rem", { lineHeight: "1.75rem" }],
+        xl: ["1.25rem", { lineHeight: "1.75rem" }],
+        "2xl": ["1.5rem", { lineHeight: "2rem" }],
+        "3xl": ["1.875rem", { lineHeight: "2.25rem" }],
+        "4xl": ["2.25rem", { lineHeight: "2.5rem" }],
       },
     },
   },
   plugins: [],
+  // Optional: if you see double-resets or element defaults feel "off",
+  // you can disable Tailwind's preflight. Try WITHOUT first.
+  // corePlugins: { preflight: false },
 };

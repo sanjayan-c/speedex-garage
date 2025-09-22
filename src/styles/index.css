@@ -1,11 +1,19 @@
+/* styles/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
+/* :root CSS vars (optional, for quick reuse in plain CSS) */
+:root {
+  --color-primary: #b3261e;
+  --color-ink: #111111;
+}
+
+/* Base: keep global fonts and text colors; Ant components will inherit */
 @layer base {
+  html,
   body {
-    @apply font-sans text-gray-900 bg-gray-50;
+    @apply font-sans text-ink bg-gray-50;
   }
   h1,
   h2,
@@ -13,25 +21,58 @@
   h4,
   h5,
   h6 {
-    @apply font-heading text-gray-900;
+    @apply font-heading text-ink;
+    letter-spacing: 0.02em; /* your 'wide' */
+  }
+
+  /* Global link style (default everywhere) */
+  a {
+    color: var(--color-primary);
+  }
+  a:hover {
+    color: rgb(179 38 30 / 0.8);
+    text-decoration: underline;
+  }
+
+  /* --- EXCEPTIONS: NAV AREAS THAT SHOULD NOT INHERIT GLOBAL LINK HOVER --- */
+
+  /* 1) Sidebar: keep links white and never underline */
+  .sidebar a,
+  .sidebar a:visited {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  .sidebar a:hover,
+  .sidebar a:focus,
+  .sidebar a:active {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  /* 2) Optional utility: apply to any nav container to suppress global link styles */
+  .navlink-reset a,
+  .navlink-reset a:visited {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  .navlink-reset a:hover,
+  .navlink-reset a:focus,
+  .navlink-reset a:active {
+    color: inherit !important;
+    text-decoration: none !important;
   }
 }
 
-/* Components */
+/* Components: keep only neutral helpers that won’t fight AntD */
 @layer components {
   .container-app {
     @apply w-full max-w-container mx-auto px-4;
   }
-  .card {
-    @apply bg-white rounded-2xl shadow;
-  }
 
-  .btn-primary {
-    @apply bg-primary text-white hover:bg-primary/90
-           focus:outline-none focus:ring-2 focus:ring-primary;
-  }
-  .btn-ghost {
-    @apply bg-primary/20 text-primary;
+  /* If you plan to use Ant Design Button/Card, remove custom .btn-* and .card */
+  /* If you want a small helper for spacing around Ant blocks, keep it generic: */
+  .app-section {
+    @apply my-6;
   }
 
   .text-title {
@@ -45,11 +86,5 @@
   }
   .text-small {
     @apply font-sans text-sm md:text-base leading-snug;
-  }
-  a {
-    @apply text-primary hover:underline hover:text-primary/80;
-  }
-  .app-content a {
-    @apply text-primary hover:text-primary/80 hover:underline;
   }
 }
